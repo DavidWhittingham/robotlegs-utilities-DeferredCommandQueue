@@ -1,39 +1,43 @@
 # **DeferredCommandQueue utility for robotlegs** #
 
-### Compatibility: robotlegs v 1.0
+### Compatibility: robotlegs v2.0+
 
 ## What's it for? ##
 
 Say you've got a series of asynchronous loading actions to be carried out by a service. And each loading action is called by an individual command, but you want to wait until each command is finished before running the next. And the order (and occurrence) of that list of commands is only decided at runtime. This utility helps you in that situation.
 
-## Ok - what do I need to do to use it? ##
+## Okay - what do I need to do to use it? ##
 
 #### First, set up the mapping for the DeferredCommandQueue itself
 
-    injector.mapSingletonOf(IDeferredCommandQueue, DeferredCommandQueue)
+    injector.map(IDeferredCommandQueue).toSingleton(DeferredCommandQueue);
+    
+You can use named-injections to setup multiple queues if you like:
 
-#### Then wire some events to the RunNextDeferredCommand (really that should be called RunNextDeferredCommandCommand but that sounds stupid)
+    injector.map(IDeferredCommandQueue, "QueueOne").toSingleton(DeferredCommandQueue);
+
+#### Then wire some events (or signals using SignalCommandMap) to the RunNextDeferredCommand (really that should be called RunNextDeferredCommandCommand but that sounds stupid)
 
     // you need an event that's going to kick the process off (this is your custom event)
-	commandMap.mapEvent(DataRequestEvent.DATA_LOADING_REQUESTED, RunNextDeferredCommand);
+	commandMap.map(DataRequestEvent.DATA_LOADING_REQUESTED).toCommand(RunNextDeferredCommand);
 
 	// you also need to wire to an event that is fired when each process is finished (also a custom event)
-        // you could map to multiple events here if you're using different services.
-	commandMap.mapEvent(SomeServiceEvent.FINISHED_LOADING_DATA, RunNextDeferredCommand);
+    // you could map to multiple events here if you're using different services.
+	commandMap.map(SomeServiceEvent.FINISHED_LOADING_DATA).toCommand(RunNextDeferredCommand);
 	
 #### Then populate your queue with the commands you'd like to run - this might happen in a command itself - let's assume it does
 
 	[Inject]
 	public var deferredCommandQueue:IDeferredCommandQueue;
 	
-	override public function execute():void
+	public function execute():void
 	{
-		deferredCommandQueue.addCommandToQueue(SomeCommand);
-		deferredCommandQueue.addCommandToQueue(SomeOtherCommand);
+		this.deferredCommandQueue.addCommandToQueue(SomeCommand);
+		this.deferredCommandQueue.addCommandToQueue(SomeOtherCommand);
 		
 		// by default, the command will only be added if it has never been in the queue.
 		// pass true as the 2nd parameter if you really want to repeat it
-		deferredCommandQueue.addCommandToQueue(SomeCommand, true);
+		this.deferredCommandQueue.addCommandToQueue(SomeCommand, true);
 	} 
 	                 
 	
@@ -47,24 +51,27 @@ Say you've got a series of asynchronous loading actions to be carried out by a s
 	[Inject]
 	public var dataRequestEvent:DataRequestEvent;
 	
+	[Inject]
+	public var injector:IInjector;
+	
 	// your commands might be stored in a lookup object that allows you to retrieve them using the data request payload 
 	// so that UserData is mapped to LoadUserDataCommand etc.
 	[Inject]
 	public var dataLoadingCommandsLookup:IDataCommandsLookup;
 	
-	override public function execute():void
+	public function execute():void
 	{
 		
-		var dataRequestTypes:Vector.<Class> = dataRequestEvent.dataRequestTypes;
+		var dataRequestTypes:Vector.<Class> = this.dataRequestEvent.dataRequestTypes;
 		
 		for each (var nextDataClass:Class in dataRequestTypes)
 		{
-			var dataLoadingCommandClass:CommandClass = dataLoadingCommandsLookup.getCommandForDataClass(nextDataClass);
-			deferredCommandQueue.addCommandToQueue(dataLoadingCommandClass);
+			var dataLoadingCommandClass:CommandClass = this.dataLoadingCommandsLookup.getCommandForDataClass(nextDataClass);
+			this.deferredCommandQueue.addCommandToQueue(dataLoadingCommandClass);
 		}
 		
 	    // now run the RunNextDeferredCommand (or you could simply map it to the same event as this one but afterwards)
-		var runNextDeferredCommand:Command = injector.instantiate(RunNextDeferredCommand);
+		var runNextDeferredCommand:Command = this.injector.getInstance(RunNextDeferredCommand);
 		runNextDeferredCommand.execute();
 		
 	}
@@ -96,8 +103,3 @@ This allows you to queue across services, and to keep your queuing logic out of 
 ## Are the Commands asynchronous?
 
 The queue is intended for Commands which call async services, but the Commands themselves are born-execute-die instantly, so they don't persist themselves in order to have an asynchronous life style.
-
-
-## What's the support directory for? ##
-
-I like to separate source / tests / support. The support folder structure matches the others, but it contains items specifically created for testing purposes that should never be used in your real implementation. The tests are for asUnit 3.
