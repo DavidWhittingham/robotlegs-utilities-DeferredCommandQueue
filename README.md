@@ -11,19 +11,15 @@ Say you've got a series of asynchronous loading actions to be carried out by a s
 #### First, set up the mapping for the DeferredCommandQueue itself
 
     injector.map(IDeferredCommandQueue).toSingleton(DeferredCommandQueue);
-    
-You can use named-injections to setup multiple queues if you like:
-
-    injector.map(IDeferredCommandQueue, "QueueOne").toSingleton(DeferredCommandQueue);
 
 #### Then wire some events (or signals using SignalCommandMap) to the RunNextDeferredCommand (really that should be called RunNextDeferredCommandCommand but that sounds stupid)
 
     // you need an event that's going to kick the process off (this is your custom event)
-	commandMap.map(DataRequestEvent.DATA_LOADING_REQUESTED).toCommand(RunNextDeferredCommand);
+    commandMap.map(DataRequestEvent.DATA_LOADING_REQUESTED).toCommand(RunNextDeferredCommand);
 
-	// you also need to wire to an event that is fired when each process is finished (also a custom event)
+    // you also need to wire to an event that is fired when each process is finished (also a custom event)
     // you could map to multiple events here if you're using different services.
-	commandMap.map(SomeServiceEvent.FINISHED_LOADING_DATA).toCommand(RunNextDeferredCommand);
+    commandMap.map(SomeServiceEvent.FINISHED_LOADING_DATA).toCommand(RunNextDeferredCommand);
 	
 #### Then populate your queue with the commands you'd like to run - this might happen in a command itself - let's assume it does
 
