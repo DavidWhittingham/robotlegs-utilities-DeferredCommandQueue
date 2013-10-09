@@ -8,11 +8,11 @@ Say you've got a series of asynchronous loading actions to be carried out by a s
 
 ## Okay - what do I need to do to use it? ##
 
-#### First, set up the mapping for the DeferredCommandQueue itself
+First, set up the mapping for the DeferredCommandQueue itself
 
     injector.map(IDeferredCommandQueue).toSingleton(DeferredCommandQueue);
 
-#### Then wire some events (or signals using SignalCommandMap) to the RunNextDeferredCommand (really that should be called RunNextDeferredCommandCommand but that sounds stupid)
+Then wire some events (or signals using SignalCommandMap) to the RunNextDeferredCommand (really that should be called RunNextDeferredCommandCommand but that sounds stupid)
 
     // you need an event that's going to kick the process off (this is your custom event)
     commandMap.map(DataRequestEvent.DATA_LOADING_REQUESTED).toCommand(RunNextDeferredCommand);
@@ -21,7 +21,7 @@ Say you've got a series of asynchronous loading actions to be carried out by a s
     // you could map to multiple events here if you're using different services.
     commandMap.map(SomeServiceEvent.FINISHED_LOADING_DATA).toCommand(RunNextDeferredCommand);
 	
-#### Then populate your queue with the commands you'd like to run - this might happen in a command itself - let's assume it does
+Then populate your queue with the commands you'd like to run - this might happen in a command itself - let's assume it does
 
 	[Inject]
 	public var deferredCommandQueue:IDeferredCommandQueue;
@@ -37,7 +37,7 @@ Say you've got a series of asynchronous loading actions to be carried out by a s
 	} 
 	                 
 	
-#### An alternative implementation - where you're receiving payload on an event that determines the commands to add:
+An alternative implementation - where you're receiving payload on an event that determines the commands to add:
 
 	// this command is mapped to the data loading request event instead of RunNextDeferredCommand
                      
